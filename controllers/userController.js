@@ -1,6 +1,5 @@
 const User = require("../models/User");
 
-// ✅ CREATE — POST /api/users
 const createUser = async (req, res) => {
   try {
     const user = await User.create(req.body);
@@ -10,7 +9,6 @@ const createUser = async (req, res) => {
   }
 };
 
-// ✅ READ ALL — GET /api/users
 const getAllUsers = async (req, res) => {
   try {
     const users = await User.find();
@@ -20,7 +18,6 @@ const getAllUsers = async (req, res) => {
   }
 };
 
-// ✅ READ ONE — GET /api/users/:id
 const getUserById = async (req, res) => {
   try {
     const user = await User.findById(req.params.id);
@@ -35,14 +32,12 @@ const getUserById = async (req, res) => {
   }
 };
 
-// ✅ UPDATE — PUT /api/users/:id
 const updateUser = async (req, res) => {
   try {
-    const user = await User.findByIdAndUpdate(
-      req.params.id,
-      req.body,
-      { new: true, runValidators: true }, // new:true returns updated doc
-    );
+    const user = await User.findByIdAndUpdate(req.params.id, req.body, {
+      new: true,
+      runValidators: true,
+    });
     if (!user) {
       return res
         .status(404)
@@ -54,7 +49,6 @@ const updateUser = async (req, res) => {
   }
 };
 
-// ✅ DELETE — DELETE /api/users/:id
 const deleteUser = async (req, res) => {
   try {
     const user = await User.findByIdAndDelete(req.params.id);

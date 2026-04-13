@@ -10,16 +10,14 @@ import EditProduct from "./pages/EditProduct";
 export default function App() {
   return (
     <BrowserRouter>
+      {/* ProductProvider is inside BrowserRouter so it can call useNavigate */}
       <ProductProvider>
-        {/* min-h-screen ensures the background covers the whole page */}
-        <div className="flex flex-col min-h-screen">
+        {/* Tailwind replaces inline styles: min-h-screen, flex, flex-col */}
+        <div className="flex flex-col min-h-screen bg-gray-50">
           <Navbar />
 
-          {/* container: Sets a max-width based on screen size
-            mx-auto: Centers the content
-            px-4: Adds "gutters" on mobile so text doesn't touch the screen edge
-          */}
-          <main className="flex-grow container mx-auto px-4 py-6 md:py-10">
+          {/* Main content area with a container for better spacing */}
+          <main className="flex-grow container mx-auto px-4 py-8">
             <Routes>
               <Route path="/" element={<ProductList />} />
               <Route path="/product/:id" element={<ProductDetail />} />

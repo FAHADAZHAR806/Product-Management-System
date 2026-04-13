@@ -14,7 +14,7 @@ export default function Navbar() {
           <Link to="/" className="flex items-center gap-2">
             <span className="text-2xl">📦</span>
             <span className="font-extrabold text-xl tracking-tight text-gray-900">
-              PRO<span className="text-blue-600">MGR</span>
+              PRO<span className="text-blue-300">MGR</span>
             </span>
           </Link>
 

@@ -11,17 +11,17 @@ export default function AddProduct() {
     category: "",
     description: "",
     stock: "",
+    thumbnail: "", // 1. Added thumbnail state
   });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    // Context handles the API call and the navigate("/")
     await addProduct(formData);
-    navigate("/");
   };
 
   return (
     <div className="max-w-3xl mx-auto">
-      {/* Back Button - Easy to tap on mobile */}
       <button
         onClick={() => navigate("/")}
         className="mb-6 text-gray-500 hover:text-blue-600 flex items-center gap-2 font-medium"
@@ -36,7 +36,7 @@ export default function AddProduct() {
           </h1>
 
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Title - Full Width */}
+            {/* Title */}
             <div>
               <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wide">
                 Product Title
@@ -52,7 +52,21 @@ export default function AddProduct() {
               />
             </div>
 
-            {/* Responsive Row: Stacks on mobile, side-by-side on desktop */}
+            {/* 2. ADDED: Image URL Field */}
+            <div>
+              <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wide">
+                Image URL
+              </label>
+              <input
+                type="text"
+                className="w-full p-4 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                placeholder="https://example.com/image.jpg"
+                onChange={(e) =>
+                  setFormData({ ...formData, thumbnail: e.target.value })
+                }
+              />
+            </div>
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wide">
@@ -84,7 +98,6 @@ export default function AddProduct() {
               </div>
             </div>
 
-            {/* Category - Full Width */}
             <div>
               <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wide">
                 Category
@@ -102,7 +115,6 @@ export default function AddProduct() {
               </select>
             </div>
 
-            {/* Description - Full Width */}
             <div>
               <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wide">
                 Description
@@ -117,7 +129,6 @@ export default function AddProduct() {
               ></textarea>
             </div>
 
-            {/* Action Buttons: Stack on mobile, side-by-side on desktop */}
             <div className="flex flex-col md:flex-row gap-4 pt-4">
               <button
                 type="submit"

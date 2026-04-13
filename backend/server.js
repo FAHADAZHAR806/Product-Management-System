@@ -1,22 +1,22 @@
 const express = require("express");
-const dotenv = require("dotenv");
-const connectDB = require("../backend/src/config/db");
-
-dotenv.config();
-
-connectDB();
+require("dotenv").config();
+const cors = require("cors");
+const connectDB = require("./src/config/db");
+const productRoutes = require("./src/routes/productRoutes");
 
 const app = express();
 
-app.use(express.json());
+// Middleware
+app.use(cors()); // CRITICAL: Allows React to talk to Node
+app.use(express.json()); // Allows parsing of JSON bodies
 
-app.use("/api/users", require("../backend/src/routes/userRoutes"));
+// Connect Database
+connectDB();
 
-app.get("/", (req, res) => {
-  res.send(" API is running...");
-});
+// Routes
+app.use("/api/products", productRoutes);
 
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
-});
+const PORT = 5000;
+app.listen(PORT, () =>
+  console.log(`Server running on port http://localhost:${PORT}`),
+);

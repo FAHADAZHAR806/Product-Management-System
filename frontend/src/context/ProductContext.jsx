@@ -10,7 +10,7 @@ import axios from "axios";
 
 const ProductCtx = createContext();
 
-const BASE_URL = "https://dummyjson.com/products";
+const BASE_URL = "http://localhost:5000/api/products";
 
 export function ProductProvider({ children }) {
   const [products, setProducts] = useState([]);
@@ -20,7 +20,6 @@ export function ProductProvider({ children }) {
   const [toast, setToast] = useState(null);
   const navigate = useNavigate();
 
-  /* ── Toast helper ── */
   const showToast = (msg, type = "success") => {
     setToast({ msg, type });
     setTimeout(() => setToast(null), 2800);
@@ -31,14 +30,14 @@ export function ProductProvider({ children }) {
     setLoading(true);
     setError(null);
     try {
-      // Axios automatically handles JSON conversion
-      const response = await axios.get(`${BASE_URL}?limit=100`);
-      setProducts(response.data.products || []);
+      const response = await axios.get(BASE_URL);
+      setProducts(Array.isArray(response.data) ? response.data : []);
     } catch (err) {
-      setError(
-        "Failed to load products. Please check your internet connection.",
-      );
+      // This catches the "Network Error"
+      setError("Connection failed. Is the backend running?");
+      console.error("Fetch Error:", err);
     } finally {
+      // THIS IS CRITICAL: It stops the "Loading" loop even if the server is dead
       setLoading(false);
     }
   }, []);
@@ -52,7 +51,8 @@ export function ProductProvider({ children }) {
     try {
       const response = await axios.get(`${BASE_URL}/${id}`);
       return response.data;
-    } catch {
+    } catch (err) {
+      console.error("Get Product Error:", err);
       return null;
     }
   }, []);
@@ -60,16 +60,17 @@ export function ProductProvider({ children }) {
   /* ── Add product ── */
   const addProduct = useCallback(
     async (data) => {
+      setLoading(true); // START LOADING
       try {
-        const response = await axios.post(`${BASE_URL}/add`, data);
-        const newProduct = response.data;
-
-        // DummyJSON returns id=101 every time, so we assign a local unique id
-        setProducts((prev) => [{ ...newProduct, id: Date.now() }, ...prev]);
+        const response = await axios.post(BASE_URL, data);
+        setProducts((prev) => [response.data, ...prev]);
         showToast("Product added successfully!");
         navigate("/");
-      } catch {
+      } catch (err) {
+        console.error("Add Error:", err.response?.data || err.message);
         showToast("Failed to add product.", "error");
+      } finally {
+        setLoading(false); // STOP LOADING
       }
     },
     [navigate],
@@ -78,17 +79,19 @@ export function ProductProvider({ children }) {
   /* ── Update product ── */
   const updateProduct = useCallback(
     async (id, data) => {
+      setLoading(true); // START LOADING
       try {
         const response = await axios.put(`${BASE_URL}/${id}`, data);
         const updated = response.data;
 
-        setProducts((prev) =>
-          prev.map((p) => (p.id === id ? { ...p, ...updated, id } : p)),
-        );
+        setProducts((prev) => prev.map((p) => (p._id === id ? updated : p)));
         showToast("Product updated successfully!");
         navigate("/");
-      } catch {
+      } catch (err) {
+        console.error("Update Error:", err);
         showToast("Failed to update product.", "error");
+      } finally {
+        setLoading(false); // STOP LOADING
       }
     },
     [navigate],
@@ -96,16 +99,19 @@ export function ProductProvider({ children }) {
 
   /* ── Delete product ── */
   const deleteProduct = useCallback(async (id) => {
+    setLoading(true); // START LOADING
     try {
       await axios.delete(`${BASE_URL}/${id}`);
-      setProducts((prev) => prev.filter((p) => p.id !== id));
-      showToast("Product deleted.");
-    } catch {
+      setProducts((prev) => prev.filter((p) => p._id !== id));
+      showToast("Product deleted successfully.");
+    } catch (err) {
+      console.error("Delete Error:", err);
       showToast("Failed to delete product.", "error");
+    } finally {
+      setLoading(false); // STOP LOADING
     }
   }, []);
 
-  /* ── Filtered products (search) ── */
   const filteredProducts = searchTerm.trim()
     ? products.filter((p) =>
         p.title.toLowerCase().includes(searchTerm.toLowerCase()),
@@ -131,7 +137,7 @@ export function ProductProvider({ children }) {
     >
       {children}
 
-      {/* Global toast using Tailwind CSS */}
+      {/* Global toast */}
       {toast && (
         <div className="fixed bottom-5 right-5 z-50 animate-bounce">
           <div

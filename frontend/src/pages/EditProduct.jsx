@@ -4,7 +4,7 @@ import { useProducts } from "../context/ProductContext";
 import FormField from "../components/FormField";
 
 export default function EditProduct() {
-  const { id } = useParams();
+  const { id } = useParams(); // MongoDB _id string from the URL
   const navigate = useNavigate();
   const { getProduct, updateProduct } = useProducts();
 
@@ -19,12 +19,16 @@ export default function EditProduct() {
     discountPercentage: "",
     rating: "",
   });
+
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
 
+  // 1. Load the product data when the component mounts
   useEffect(() => {
+    let isMounted = true;
+
     getProduct(id).then((p) => {
-      if (p) {
+      if (isMounted && p) {
         setForm({
           title: p.title || "",
           price: p.price || "",
@@ -36,74 +40,91 @@ export default function EditProduct() {
           discountPercentage: p.discountPercentage || "",
           rating: p.rating || "",
         });
+        setLoading(false);
       }
-      setLoading(false);
     });
+
+    return () => {
+      isMounted = false;
+    };
   }, [id, getProduct]);
 
+  // Handle input changes dynamically
   const handle = (e) =>
     setForm((f) => ({ ...f, [e.target.name]: e.target.value }));
 
+  // 2. Optimized Submit Function
   const submit = async (e) => {
     e.preventDefault();
+    if (busy) return;
+
     setBusy(true);
-    await updateProduct(Number(id), {
-      ...form,
-      price: parseFloat(form.price) || 0,
-      stock: parseInt(form.stock) || 0,
-      discountPercentage: parseFloat(form.discountPercentage) || 0,
-      rating: parseFloat(form.rating) || 0,
-    });
-    setBusy(false);
+    try {
+      // Send the string 'id' (NOT Number(id)) to match MongoDB
+      await updateProduct(id, {
+        ...form,
+        price: parseFloat(form.price) || 0,
+        stock: parseInt(form.stock) || 0,
+        discountPercentage: parseFloat(form.discountPercentage) || 0,
+        rating: parseFloat(form.rating) || 0,
+      });
+
+      // Navigation is handled in the ProductContext.jsx upon success
+    } catch (error) {
+      console.error("Failed to update product:", error);
+      setBusy(false); // Only reset if we didn't navigate away
+    }
   };
 
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-600"></div>
-        <span className="text-gray-500 font-medium">Loading product...</span>
+        <span className="text-gray-500 font-medium">
+          Loading product details...
+        </span>
       </div>
     );
   }
 
   return (
-    <div className="max-w-4xl mx-auto">
+    <div className="max-w-4xl mx-auto px-4 py-8">
       {/* Back Button */}
       <button
         className="mb-6 flex items-center gap-2 text-gray-600 hover:text-blue-600 font-medium transition-colors"
         onClick={() => navigate("/")}
       >
-        <span>←</span> Back to Products
+        <span>←</span> Back to Inventory
       </button>
 
       <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
         <div className="bg-gray-50 px-8 py-6 border-b border-gray-200 flex justify-between items-center">
           <div>
             <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
-              <span>✎</span> Edit Product
+              ✎ Edit Product
             </h2>
             <p className="text-gray-500 text-sm mt-1">
-              Modify the existing product details.
+              Update details for this item.
             </p>
           </div>
-          <span className="bg-gray-200 text-gray-600 px-3 py-1 rounded-full text-xs font-mono">
-            ID: #{id}
+          <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-xs font-mono font-bold">
+            ID: {id.slice(-6)}...
           </span>
         </div>
 
         <div className="p-8">
-          {/* Thumbnail Preview Section */}
+          {/* Image Preview */}
           {form.thumbnail && (
             <div className="mb-8 flex items-center gap-4 p-4 bg-gray-50 rounded-xl border border-dashed border-gray-300">
               <img
                 src={form.thumbnail}
                 alt="preview"
-                className="w-20 h-20 object-contain rounded-lg bg-white border border-gray-200 p-1"
-                onError={(e) => (e.target.parentElement.style.display = "none")}
+                className="w-20 h-20 object-contain rounded-lg bg-white border border-gray-200"
+                onError={(e) => (e.target.style.display = "none")}
               />
               <div>
                 <p className="text-sm font-semibold text-gray-700">
-                  Image Preview
+                  Current Image
                 </p>
                 <p className="text-xs text-gray-500 truncate max-w-xs">
                   {form.thumbnail}
@@ -131,17 +152,17 @@ export default function EditProduct() {
                 onChange={handle}
                 required
                 type="number"
-                min="0"
                 step="0.01"
               />
+
               <FormField
                 label="Stock Quantity"
                 name="stock"
                 value={form.stock}
                 onChange={handle}
                 type="number"
-                min="0"
               />
+
               <FormField
                 label="Category"
                 name="category"
@@ -154,26 +175,6 @@ export default function EditProduct() {
                 value={form.brand}
                 onChange={handle}
               />
-              <FormField
-                label="Discount (%)"
-                name="discountPercentage"
-                value={form.discountPercentage}
-                onChange={handle}
-                type="number"
-                min="0"
-                max="100"
-                step="0.01"
-              />
-              <FormField
-                label="Rating (0–5)"
-                name="rating"
-                value={form.rating}
-                onChange={handle}
-                type="number"
-                min="0"
-                max="5"
-                step="0.1"
-              />
 
               <div className="md:col-span-2">
                 <FormField
@@ -181,6 +182,7 @@ export default function EditProduct() {
                   name="thumbnail"
                   value={form.thumbnail}
                   onChange={handle}
+                  placeholder="https://example.com/image.jpg"
                 />
               </div>
 
@@ -189,9 +191,7 @@ export default function EditProduct() {
                   Description
                 </label>
                 <textarea
-                  className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg 
-                             text-gray-900 text-sm outline-none transition-all duration-200
-                             focus:border-blue-500 focus:ring-4 focus:ring-blue-100 min-h-[120px]"
+                  className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg text-gray-900 text-sm outline-none transition-all focus:border-blue-500 focus:ring-4 focus:ring-blue-100 min-h-[120px]"
                   name="description"
                   value={form.description}
                   onChange={handle}
@@ -199,39 +199,14 @@ export default function EditProduct() {
               </div>
             </div>
 
-            {/* Actions */}
+            {/* Buttons */}
             <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t border-gray-100">
               <button
                 type="submit"
-                className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 text-white font-bold py-3 rounded-xl transition-all shadow-lg shadow-blue-100 flex items-center justify-center gap-2"
                 disabled={busy}
+                className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 text-white font-bold py-3 rounded-xl transition-all flex items-center justify-center gap-2"
               >
-                {busy ? (
-                  <>
-                    <svg
-                      className="animate-spin h-5 w-5 text-white"
-                      viewBox="0 0 24 24"
-                    >
-                      <circle
-                        className="opacity-25"
-                        cx="12"
-                        cy="12"
-                        r="10"
-                        stroke="currentColor"
-                        strokeWidth="4"
-                        fill="none"
-                      ></circle>
-                      <path
-                        className="opacity-75"
-                        fill="currentColor"
-                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                      ></path>
-                    </svg>
-                    Saving...
-                  </>
-                ) : (
-                  "✓ Save Changes"
-                )}
+                {busy ? "Saving Changes..." : "✓ Save Product"}
               </button>
               <button
                 type="button"

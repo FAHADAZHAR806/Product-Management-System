@@ -1,8 +1,17 @@
 {
   "version": 2,
   "rewrites": [
-    { "source": "/api/products", "destination": "/backend/index.js" },
-    { "source": "/api/products/(.*)", "destination": "/backend/index.js" },
-    { "source": "/(.*)", "destination": "/frontend/index.html" }
+    {
+      "source": "/api/products/:path*",
+      "destination": "/backend/server.js"
+    },
+    {
+      "source": "/api/products",
+      "destination": "/backend/server.js"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/frontend/index.html"
+    }
   ]
 }

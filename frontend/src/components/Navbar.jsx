@@ -21,7 +21,7 @@ export default function Navbar() {
       // Frontend cleanup hamesha hona chahiye
       localStorage.removeItem("userInfo");
       setIsOpen(false);
-      navigate("/login");
+      navigate("/logged-out");
       window.location.reload();
     }
   };

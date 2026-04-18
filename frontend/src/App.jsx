@@ -9,7 +9,7 @@ import EditProduct from "./pages/EditProduct";
 import ViewProduct from "./pages/ViewProduct";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
-
+import LoggedOut from "./components/LoggedOut";
 // ── PROTECTED ROUTE COMPONENT ──
 // Ye component check karega ke localStorage mein user hai ya nahi
 const ProtectedRoute = ({ children }) => {
@@ -35,6 +35,7 @@ export default function App() {
                 {/* ── PUBLIC ROUTES ── */}
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
+                <Route path="/logged-out" element={<LoggedOut />} />
 
                 {/* ── PROTECTED ROUTES ── */}
                 {/* Ye saare pages sirf login ke baad dikhen ge */}

@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import axios from "axios"; // Axios import karein
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
@@ -11,11 +12,18 @@ export default function Navbar() {
     : null;
 
   // Logout function
-  const handleLogout = () => {
-    localStorage.removeItem("userInfo");
-    setIsOpen(false);
-    navigate("/login");
-    window.location.reload(); // App state reset karne ke liye
+  const handleLogout = async () => {
+    try {
+      await axios.post("/api/auth/logout");
+    } catch (error) {
+      console.log("Logout backend call failed (ignoring):", error);
+    } finally {
+      // Frontend cleanup hamesha hona chahiye
+      localStorage.removeItem("userInfo");
+      setIsOpen(false);
+      navigate("/login");
+      window.location.reload();
+    }
   };
 
   return (
@@ -25,7 +33,7 @@ export default function Navbar() {
           {/* 1. LOGO SECTION */}
           <Link to="/" className="flex items-center gap-2">
             <span className="text-2xl">📦</span>
-            <span className="font-extrabold text-xl tracking-tight text-gray-900">
+            <span className="font-semibold text-xl tracking-tight text-gray-900">
               PRO<span className="text-blue-600">MGR</span>
             </span>
           </Link>

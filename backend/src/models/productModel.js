@@ -23,9 +23,8 @@ const productSchema = new mongoose.Schema({
     type: Number,
     default: 0,
   },
-  thumbnail: {
+  image: {
     type: String,
-    default: "https://via.placeholder.com/150", // Fallback image
   },
   createdAt: {
     type: Date,

@@ -16,7 +16,6 @@ const BASE_URL = isLocal
   : "https://mongo-db-production-262b.up.railway.app/api/products";
 
 // ── AXIOS INSTANCE WITH AUTH ──
-// Hum ek custom axios instance banate hain jo har request mein token check karega
 const API = axios.create({
   baseURL: BASE_URL,
 });
@@ -35,6 +34,11 @@ export function ProductProvider({ children }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
+
+  // ── PAGINATION STATES ──
+  const [pages, setPages] = useState(1); // Total pages from backend
+  const [totalProducts, setTotalProducts] = useState(0);
+
   const [toast, setToast] = useState(null);
   const navigate = useNavigate();
 
@@ -43,19 +47,25 @@ export function ProductProvider({ children }) {
     setTimeout(() => setToast(null), 2800);
   };
 
-  /* ── Fetch all products (Public - No Token Needed) ── */
-  const fetchProducts = useCallback(async () => {
+  /* ── Fetch all products (Updated for Pagination) ── */
+  const fetchProducts = useCallback(async (page = 1) => {
     setLoading(true);
     setError(null);
     try {
-      const response = await axios.get(BASE_URL);
-      setProducts(
-        Array.isArray(response.data.products)
-          ? response.data.products
-          : Array.isArray(response.data)
-            ? response.data
-            : [],
-      );
+      // Backend ko page query bhej rahe hain
+      const response = await axios.get(`${BASE_URL}?page=${page}&limit=25`);
+
+      // Agar backend naya format (object) bhej raha hai
+      if (response.data.products) {
+        setProducts(response.data.products);
+        setPages(response.data.pages || 1);
+        setTotalProducts(response.data.totalProducts || 0);
+      } else {
+        // Fallback agar backend purana array format bhej raha ho
+        const data = Array.isArray(response.data) ? response.data : [];
+        setProducts(data);
+        setPages(1);
+      }
     } catch (err) {
       setError("Failed to fetch products. Check backend connection.");
       console.error("Fetch Error:", err);
@@ -68,7 +78,6 @@ export function ProductProvider({ children }) {
     fetchProducts();
   }, [fetchProducts]);
 
-  /* ── Fetch single product ── */
   const getProduct = useCallback(async (id) => {
     try {
       const response = await axios.get(`${BASE_URL}/${id}`);
@@ -79,12 +88,12 @@ export function ProductProvider({ children }) {
     }
   }, []);
 
-  /* ── Add product (Protected - Uses API instance) ── */
+  /* ── Add product ── */
   const addProduct = useCallback(
     async (data) => {
       setLoading(true);
       try {
-        const response = await API.post("/", data); // API instance automatically adds token
+        const response = await API.post("/", data);
         setProducts((prev) => [response.data, ...prev]);
         showToast("Product added successfully!");
         navigate("/");
@@ -98,7 +107,7 @@ export function ProductProvider({ children }) {
     [navigate],
   );
 
-  /* ── Update product (Protected) ── */
+  /* ── Update product ── */
   const updateProduct = useCallback(
     async (id, data) => {
       setLoading(true);
@@ -118,7 +127,7 @@ export function ProductProvider({ children }) {
     [navigate],
   );
 
-  /* ── Delete product (Protected) ── */
+  /* ── Delete product ── */
   const deleteProduct = useCallback(async (id) => {
     setLoading(true);
     try {
@@ -132,6 +141,7 @@ export function ProductProvider({ children }) {
     }
   }, []);
 
+  // Filtered products for search
   const filteredProducts = products.filter((p) => {
     const term = searchTerm.toLowerCase().trim();
     if (!term) return true;
@@ -146,12 +156,14 @@ export function ProductProvider({ children }) {
     <ProductCtx.Provider
       value={{
         products: filteredProducts,
-        allProducts: products,
+        allProducts: products, // Raw list from current page
+        pages, // EXPORTED: Total pages count
+        totalProducts, // EXPORTED: Total items count
         loading,
         error,
         searchTerm,
         setSearchTerm,
-        fetchProducts,
+        fetchProducts, // Ab aap fetchProducts(2) call kar sakte hain
         getProduct,
         addProduct,
         updateProduct,
@@ -160,14 +172,15 @@ export function ProductProvider({ children }) {
       }}
     >
       {children}
+      {/* Toast Notification UI */}
       {toast && (
         <div className="fixed bottom-5 right-5 z-[9999]">
           <div
-            className={`flex items-center gap-3 px-6 py-3 rounded-xl shadow-2xl text-white transform transition-all animate-in slide-in-from-right ${toast.type === "success" ? "bg-emerald-600" : "bg-rose-600"}`}
+            className={`flex items-center gap-3 px-6 py-3 rounded-xl shadow-2xl text-white animate-bounce ${
+              toast.type === "success" ? "bg-emerald-600" : "bg-rose-600"
+            }`}
           >
-            <span className="text-xl font-bold">
-              {toast.type === "success" ? "✓" : "✕"}
-            </span>
+            <span>{toast.type === "success" ? "✓" : "✕"}</span>
             <span className="font-medium">{toast.msg}</span>
           </div>
         </div>

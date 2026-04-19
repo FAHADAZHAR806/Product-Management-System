@@ -1,8 +1,8 @@
+const generateToken = require("../utils/generateToken");
 const User = require("../models/userModel");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 
-// ── REGISTER NEW USER ──
 exports.registerUser = async (req, res) => {
   try {
     const { name, email, password } = req.body;
@@ -29,6 +29,7 @@ exports.registerUser = async (req, res) => {
         _id: user.id,
         name: user.name,
         email: user.email,
+        token: generateToken(user.id),
         message: "User Registered Successfully!",
       });
     }
@@ -37,29 +38,24 @@ exports.registerUser = async (req, res) => {
   }
 };
 
-// Login User
 exports.loginUser = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    // 1. Check karein ke user database mein hai?
     const user = await User.findOne({ email });
 
-    // 2. Agar user mil gaya, toh password match karein
-    // user.password (hashed) ko req.body.password (plain) se compare karein
     if (user && (await bcrypt.compare(password, user.password))) {
-      // 3. Agar sahi hai, toh JWT Token generate karein
       const token = jwt.sign(
         { id: user._id },
-        process.env.JWT_SECRET || "mysecretkey123", // Secret key jo sirf server ko pata ho
-        { expiresIn: "30d" }, // Token 30 din tak chale
+        process.env.JWT_SECRET || "mysecretkey123",
+        { expiresIn: "1d" },
       );
 
       res.json({
         _id: user._id,
         name: user.name,
         email: user.email,
-        token: token, // Yeh hai user ka "Identity Card"
+        token: token,
       });
     } else {
       res.status(401).json({ message: "Invalid email or password" });
